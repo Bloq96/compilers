@@ -14,4 +14,5 @@ compile:
 
 link:
 	gcc obj/functions.o obj/emulator.o -o emulator
-	mv emulator bin
+	gcc obj/functions.o obj/assembler.o -o assembler
+	mv emulator assembler bin

@@ -3,7 +3,7 @@
 
 int compareStrings(char *string1, char *string2, int length);
 
-int readLine(char *buffer, int max_length);
+int readLine(FILE* file,char *buffer, int max_length);
 
 int stringLength(char *string);
     

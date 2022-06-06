@@ -1,0 +1,31 @@
+F: LOAD A
+   SUB P
+   JPG S
+   LOAD P
+   STORE R
+   RET
+S: LOAD A
+   PUSH A
+   SUB P
+   STORE A
+   CALL F
+   PUSH R
+   LOAD A
+   SUB P
+   STORE A
+   CALL F
+   LOAD Z
+   ADD R
+   POP R
+   ADD R
+   STORE R
+   POP A
+   RET
+   CALL F
+   WRITE R
+   HALT
+Z: WORD 0
+P: WORD 1
+A: WORD 7
+R: WORD 0
+   END

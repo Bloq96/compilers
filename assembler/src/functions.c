@@ -13,10 +13,11 @@ int compareStrings(char *string1, char *string2, int length) {
     return 0; 
 }
 
-int readLine(char *buffer, int max_length) {
+int readLine(FILE* file, char *buffer, int max_length) {
+    if(file==NULL||buffer==NULL) return -1;
     int it;
     for(it=0;it<max_length-1;++it) {
-        if(scanf("%c",&buffer[it])==EOF) {
+        if(fscanf(file,"%c",&buffer[it])==EOF) {
             buffer[it] = '\0';
             return it?it:-1;
         } else if(buffer[it]=='\n') {

@@ -19,18 +19,18 @@ int readNext(FILE *file,char *buffer, int length) {
         return 0;
     }
     int aux = fscanf(file,"%c",&(buffer[0]));
+    while(aux!=EOF&&(buffer[0]==' '||buffer[0]=='\n')) {
+        aux = fscanf(file,"%c",&(buffer[0]));
+    }
     if(aux==EOF) {
         buffer[0] = '\0';
         return EOF;
     }
-    while(buffer[0]==' '||buffer[0]=='\n') {
-        fscanf(file,"%c",&(buffer[0]));
-    }
     int cnt = 0;
-    while(cnt<(length-1)&&buffer[cnt]!=EOF&&buffer[cnt]!=' '&&
+    while(cnt<(length-1)&&aux!=EOF&&buffer[cnt]!=' '&&
     buffer[cnt]!='\n') {
         ++cnt;
-        fscanf(file,"%c",&(buffer[cnt]));
+        aux = fscanf(file,"%c",&(buffer[cnt]));
     }
     buffer[cnt] = '\0'; 
     return cnt;
@@ -79,6 +79,9 @@ int main(int argc, char *argv[]) {
         ++it;
     }
     fclose(inputFile);
+    for(aux=0;aux<it;++aux) {
+        printf("%d: %d\n",aux,memory[aux]);
+    }
     int ac = 0;
     printf("PC: %d - SP: %d - AC: %d - MEMORY: %d\n",pc,sp,ac,memory[pc]);
     while(memory[pc]!=16) {
