@@ -19,7 +19,7 @@ int readNext(FILE *file,char *buffer, int length) {
         return 0;
     }
     int aux = fscanf(file,"%c",&(buffer[0]));
-    while(aux!=EOF&&(buffer[0]==' '||buffer[0]=='\n')) {
+    while(aux!=EOF&&(buffer[0]<=32)) {
         aux = fscanf(file,"%c",&(buffer[0]));
     }
     if(aux==EOF) {
@@ -27,8 +27,7 @@ int readNext(FILE *file,char *buffer, int length) {
         return EOF;
     }
     int cnt = 0;
-    while(cnt<(length-1)&&aux!=EOF&&buffer[cnt]!=' '&&
-    buffer[cnt]!='\n') {
+    while(cnt<(length-1)&&aux!=EOF&&buffer[cnt]>32) {
         ++cnt;
         aux = fscanf(file,"%c",&(buffer[cnt]));
     }
@@ -79,9 +78,9 @@ int main(int argc, char *argv[]) {
         ++it;
     }
     fclose(inputFile);
-    for(aux=0;aux<it;++aux) {
+    /*for(aux=0;aux<it;++aux) {
         printf("%d: %d\n",aux,memory[aux]);
-    }
+    }*/
     int ac = 0;
     printf("PC: %d - SP: %d - AC: %d - MEMORY: %d\n",pc,sp,ac,memory[pc]);
     while(memory[pc]!=16) {

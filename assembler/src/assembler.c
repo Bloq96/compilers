@@ -78,15 +78,15 @@ void splitLine(char *input,int inputLength,char *output[3],
 int *outputLength) {
     int el = 0, it2 = 0;
     for(int it=0;it<inputLength;++it) {
-        if(input[it]!=' '&&input[it]!=';') {
+        if(input[it]>32&&input[it]!=';') {
             it2 = 0;
-            while(input[it]!=' '&&input[it]!=';'&&input[it]!=':'&&
+            while(input[it]>32&&input[it]!=';'&&input[it]!=':'&&
             it2<(outputLength[el]-1)) {
                 output[el][it2] = input[it];
                 ++it2;
                 ++it;
             }
-            if(input[it]==':') {
+            if(input[it]==':'&&it2<(outputLength[el]-1)) {
                 output[el][it2] = ':';
                 ++it2;
             }
@@ -95,6 +95,10 @@ int *outputLength) {
             ++el; 
         }
         if(input[it]=='\0'||input[it]==';'||el==3) {
+            for(;el<3;++el) {
+                output[el][0] = '\0';
+                outputLength[el] = 0;
+            }
             break;
         }
     }
@@ -144,15 +148,18 @@ int main(int argc, char *argv[]) {
         } else {
             if(!compareStrings(strings[0],"END",lengths[0])) {
                 break;
+            } else if(compareStrings(strings[0],"WORD",lengths[0])) {
+                ++pc;
             }
-            ++pc;
         }
         if(lengths[1]>0) {
             if(!compareStrings(strings[1],"END",lengths[1])) {
                 break;
+            } else if(compareStrings(strings[1],"WORD",lengths[1])) {
+                ++pc;
             }
-            ++pc;
-        } else if(lengths[2]>0) {
+        } 
+        if(lengths[2]>0) {
             ++pc;
         }
         len = readLine(inputFile,buffer,BUFFER_LENGTH);
@@ -168,7 +175,7 @@ int main(int argc, char *argv[]) {
     FILE *outputFile;
     outputFile = fopen("output.txt","w");
     
-    fprintf(outputFile,"MV1 0 999 %d ",pc-1);
+    fprintf(outputFile,"MV1 0 999 %d ",pc);
     
     pc = 0; 
     len = readLine(inputFile,buffer,BUFFER_LENGTH);
@@ -188,8 +195,8 @@ int main(int argc, char *argv[]) {
                     fprintf(outputFile,"%d ",encode(strings[0],
                     lengths[0]));
                 }
-                ++pc;
                 if(len<15) {
+                    ++pc;
                     fprintf(outputFile,"%d ",(lookup(&lut,strings[1],
                     lengths[1])-pc));
                 }
@@ -201,8 +208,8 @@ int main(int argc, char *argv[]) {
                     fprintf(outputFile,"%d ",encode(strings[1],
                     lengths[1]));
                 }
-                ++pc;
                 if(len<15) {
+                    ++pc;
                     fprintf(outputFile,"%d ",(lookup(&lut,strings[2],
                     lengths[2])-pc));
                 }
