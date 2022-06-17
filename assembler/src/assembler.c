@@ -1,7 +1,15 @@
+/**==============================================
+ * ?                    ABOUT
+ * @author      : Gabriel Ricardo & Marcos Willian
+ * @repo        : https://github.com/Bloq96/compilers.git
+ * @createdOn   : 2022
+ * @description : This program implements a assembler for a
+ *                virtual machine exemple. This assembler is 
+ *                very simple and do not have faliure check.
+ *=============================================**/
 #include <stdio.h>
 #include <stdlib.h>
 #include "functions.h"
-
 #define BUFFER_LENGTH 256
 #define LOOKUP_LENGTH 10
 
@@ -25,7 +33,7 @@ int lookup(struct LookupTable *lut, char *var, int length)
 
 int encode(char *var, int length)
 {
-    if (length < 3)
+    if (length < 3) //*Caso exista algum problema com o comando o programa deve parar 
     {
         return 16;
     }
@@ -106,11 +114,11 @@ void splitLine(char *input, int inputLength, char *output[3], int *outputLength)
     int el = 0, it2 = 0;
     for (int it = 0; it < inputLength; ++it)
     {
-        if (input[it] > 32 && input[it] != ';')
+        if (input[it] > 32 && input[it] != ';') //*'char'>32 exclui todos os caracteres de controle do codigo ASCII
         {
             it2 = 0;
             while (input[it] > 32 && input[it] != ';' && input[it] != ':' && it2 < (outputLength[el] - 1))
-            {
+            {//*Três condições de parada: espaço, ';' e ':'
                 output[el][it2] = input[it];
                 ++it2;
                 ++it;
@@ -164,8 +172,9 @@ int main(int argc, char *argv[])
     int len;
 
     len = readLine(inputFile, buffer, BUFFER_LENGTH);
-    while (len != EOF)
+    while (len != EOF) //*Primeira passada, criação da tabela de simbolos 
     {
+       
         lengths[0] = SMALL_BUFFER_LENGTH;
         lengths[1] = SMALL_BUFFER_LENGTH;
         lengths[2] = SMALL_BUFFER_LENGTH;
@@ -227,7 +236,7 @@ int main(int argc, char *argv[])
 
     pc = 0;
     len = readLine(inputFile, buffer, BUFFER_LENGTH);
-    while (len != EOF)
+    while (len != EOF) //*Segunda passada, tradução do código
     {
         lengths[0] = SMALL_BUFFER_LENGTH;
         lengths[1] = SMALL_BUFFER_LENGTH;

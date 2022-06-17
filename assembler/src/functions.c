@@ -6,13 +6,12 @@ int compareStrings(char *string1, char *string2, int length) {
             return -1;
         } else if((int)string1[it]>(int)string2[it]) {
             return 1;
-        } else if(string1[it]=='\0') {
+        } else if(string1[it]=='\0') { //!Permite que uma string menor seja reconhecida como correta!
             break;
         }
     }
     return 0; 
 }
-
 int readLine(FILE* file, char *buffer, int max_length) {
     if(file==NULL||buffer==NULL) return -1;
     int it;
