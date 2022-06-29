@@ -43,6 +43,16 @@ extern YYSTYPE cool_yylval;
  *  Add Your own definitions here
  */
 
+int countLines(char *string) {
+    int lines = 0;
+    for(int it = 0; string[it] != '\0'; ++it) {
+        if(string[it] == '\n') {
+            ++lines;
+        }
+    }
+    return lines;
+}
+
 %}
 
 /*
@@ -51,6 +61,24 @@ extern YYSTYPE cool_yylval;
 /*
  * RX_DARROW          =>
  */
+RE_WHITE                    [\ \f\r\t\v]
+RE_WHILE                    [wW][hH][iI][lL][eE]
+RE_THEN                     [tT][hH][eE][nN]
+RE_POOL                     [pP][oO]{2}[lL]
+RE_OF                       [oO][fF]
+RE_NEW                      [nN][eE][wW]
+RE_LOOP                     [lL][oO]{2}[pP]
+RE_LET                      [lL][eE][tT]
+RE_ISVOID                   [iI][sS][vV][oO][iI][dD]
+RE_INHERITS                 [iI][nN][hH][eE][rR][iI][tT][sS]
+RE_IN                       [iI][nN]
+RE_IF                       [iI][fF]
+RE_FI                       [fF][iI]
+RE_ESAC                     [eE][sS][aA][cC]
+RE_ELSE                     [eE][lL][sS][eE]
+RE_COMMENT                  [(][*]([^(*)]|\n|([(][^*])|([^(][*])|([*][^)])|([^*][)]))*[*][)]
+RE_CLASS                    [cC][lL][aA][sS]{2}
+RE_CASE                     [cC][aA][sS][eE]
 
 %%
 
@@ -62,9 +90,27 @@ extern YYSTYPE cool_yylval;
  /*
   *  The multiple-character operators.
   */
-"=>"    		{ return (DARROW); }
-"\n"            { ++curr_lineno; }
-.               { ; }
+"=>"    		    { return (DARROW); }
+{RE_WHILE}          { return (WHILE); }
+{RE_THEN}           { return (THEN); }
+{RE_POOL}           { return (POOL); }
+{RE_OF}             { return (OF); }
+{RE_NEW}            { return (NEW); }
+{RE_LOOP}           { return (LOOP); }
+{RE_LET}            { return (LET); }
+{RE_ISVOID}         { return (ISVOID); }
+{RE_INHERITS}       { return (INHERITS); }
+{RE_IN}             { return (IN); }
+{RE_IF}             { return (IF); }
+{RE_FI}             { return (FI); }
+{RE_ESAC}           { return (ESAC); }
+{RE_ELSE}           { return (ELSE); }
+{RE_CLASS}          { return (CLASS); }
+{RE_CASE}           { return (CASE); }
+"\n"                { ++curr_lineno; }
+{RE_WHITE}          { ; }
+{RE_COMMENT}        { curr_lineno += countLines(yytext); }
+.                   { return (ERROR); }
  /*
   * Keywords are case-insensitive except for the values true and false,
   * which must begin with a lower-case letter.

@@ -47,14 +47,15 @@ int main() {
     }
 
     int ntoken;
-    int old_lineno = 0;
+    int old_lineno = 1;
 
     ntoken = yylex();
+    printf("   1: ");
     while(ntoken) {
         if(old_lineno<curr_lineno) {
-            printf("\n");
+            printf("\n%4d: ", curr_lineno);
         }
-        printf("%4d: %s ", curr_lineno, yytoken[ntoken-258]);
+        printf("%s ", yytoken[ntoken-258]);
         old_lineno = curr_lineno;
         ntoken = yylex();
     }

@@ -1,4 +1,4 @@
 #include <stdio.h>
 
 FILE *fin;
-int curr_lineno;
+int curr_lineno = 1;
