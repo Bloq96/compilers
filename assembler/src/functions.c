@@ -71,3 +71,78 @@ int stringToInteger(char *string, int length) {
 
     return signal*result;
 }
+
+int integerToString(int integer, char *string, int length) {
+    int signal = 0;
+    if(string==NULL) {
+        return 0;
+    }
+    if(integer<0) {
+        signal = 1;
+        integer *= -1;
+    }
+    int it;
+    for(it = 0; it<(length-1); ++it) {
+        string[it] = (char)((integer%10)+48);
+        integer /= 10;
+        if(integer == 0) {
+            ++it;
+            if(signal==1) {
+                string[it] = '-';
+                ++it;
+            }
+            break;
+        }
+    }
+    string[it] = '\0';
+    char aux;
+    int temp = it/2;
+    for(int it2 = 0; it2<temp; ++it2) {
+        aux = string[it2];
+        string[it2] = string[it-1-it2];
+        string[it-1-it2] = aux;
+    }
+    return it;
+}
+
+int copyString(char *inputString, char *outputString, int length) {
+    if(inputString==NULL||outputString==NULL) {
+        return -1;
+    }
+    for(int it = 0; it<length; ++it) {
+        outputString[it] = inputString[it];
+    }
+    return 0;
+}
+
+int unscapeString(char *inputString, char *outputString, int length) {
+    if(inputString==NULL||outputString==NULL) {
+        return -1;
+    }
+    int diff = 0;
+    for(int it = 0; it<length; ++it) {
+        if(inputString[it] == '\\') {
+            ++it;
+            ++diff;
+            switch(inputString[it]) {
+                case 'b':
+                    outputString[it-diff] = '\b';
+                    break;
+                case 'f':
+                    outputString[it-diff] = '\f';
+                    break;
+                case 'n':
+                    outputString[it-diff] = '\n';
+                    break;
+                case 't':
+                    outputString[it-diff] = '\t';
+                    break;
+                default:
+                    outputString[it-diff] = inputString[it];
+            }
+        } else {
+            outputString[it-diff] = inputString[it];
+        }
+    }
+    return diff;
+}
