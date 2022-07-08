@@ -595,7 +595,7 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    84,    84,    88,    91,    97,   100,   106
+       0,    84,    84,    87,    90,    96,    99,   105
 };
 #endif
 
@@ -1394,39 +1394,39 @@ yyreduce:
     {
   case 2:
 #line 84 "cool.y"
-                        { ast_root = program((yyvsp[0].classes)); }
+                        { ast_root = program((yyvsp[0].classes));}
 #line 1399 "cool.tab.c"
     break;
 
   case 3:
-#line 89 "cool.y"
+#line 88 "cool.y"
                 { (yyval.classes) = single_Classes((yyvsp[0].class_));
                   parse_results = (yyval.classes); }
 #line 1406 "cool.tab.c"
     break;
 
   case 4:
-#line 92 "cool.y"
+#line 91 "cool.y"
                 { (yyval.classes) = append_Classes((yyvsp[-1].classes),single_Classes((yyvsp[0].class_))); 
                   parse_results = (yyval.classes); }
 #line 1413 "cool.tab.c"
     break;
 
   case 5:
-#line 98 "cool.y"
+#line 97 "cool.y"
                 { (yyval.class_) = class_((yyvsp[-4].symbol),idtable.add_string("Object"),(yyvsp[-2].features),
 			      stringtable.add_string(curr_filename)); }
 #line 1420 "cool.tab.c"
     break;
 
   case 6:
-#line 101 "cool.y"
+#line 100 "cool.y"
                 { (yyval.class_) = class_((yyvsp[-6].symbol),(yyvsp[-4].symbol),(yyvsp[-2].features),stringtable.add_string(curr_filename)); }
 #line 1426 "cool.tab.c"
     break;
 
   case 7:
-#line 106 "cool.y"
+#line 105 "cool.y"
                 {  (yyval.features) = nil_Features(); }
 #line 1432 "cool.tab.c"
     break;
@@ -1664,7 +1664,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 110 "cool.y"
+#line 109 "cool.y"
 
 
 /* This function is called automatically when Bison detects a parse error. */

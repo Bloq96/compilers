@@ -51,10 +51,11 @@ cool-parse.cc cool-parse.h: cool.y
 	mv -f cool.tab.c cool-parse.cc
 
 dotest:	parser good.cl bad.cl
-	@echo "\nRunning parser on good.cl\n"
-	-./myparser good.cl 
-	@echo "\nRunning parser on bad.cl\n"
-	-./myparser bad.cl
+	./lexer test.cl
+# @echo "\nRunning parser on good.cl\n"
+# -./myparser good.cl 
+# @echo "\nRunning parser on bad.cl\n"
+# -./myparser bad.cl
 
 ${LIBS}:
 	${CLASSDIR}/etc/link-object ${ASSN} $@
