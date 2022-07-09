@@ -124,8 +124,8 @@ Write-up for PA2
 ----------------
 - Códigos escritos
 
-	O único arquivo modificado foi o cool-flex. Nele inicialmente foi provido
-	um esqueleto de códio à esse esqueleto foram adicionadas algumas funções 
+	O único arquivo modificado foi o cool.flex e o test.cl. Neles inicialmente foi provido
+	um esqueleto de códio. Então à esse esqueleto foram adicionadas algumas funções 
 	auxiliares bem como todas as definições necessárias para o lexer. As definições 
 	de projeto as funções auxiliares serão explicadas abaixo.
 
@@ -136,27 +136,60 @@ Write-up for PA2
 
 	int unscapeString(char *inputString, char *outputString, int length) = Copia uma string
 	criando os caracteres escapadores. Por exemplo uma string composta por 'a''\\''n' será 
-	transformada em 'a''\n'. Ela retornará a diferença de tamanho da nova string. Nesse caso
-	1.
+	transformada em 'a''\n'. Ela retornará a diferença de tamanho da nova string. Nesse exemplo
+	retornará 1.
 
 	*Decisões de projeto*->
 
 	Para a definição das strings optou-se por usar 2 estados diferentes do inicial. O inicio da 
-	identificação de uma string se inicia com "\\"". Então o o lexer vai para o estado \<STRING\>.
-	Nesse estados todo os caracteres diferentes de "\n", "\0" e "\\"" são adicionados a string. Caso
+	identificação de uma string acontece com a leitura da aspas duplas ("\\""). Então o o lexer vai 
+	para o estado \<STRING\>.
+	Nesse estado todos os caracteres diferentes de "\n", "\0", EOF e "\\"" são adicionados a string. Caso
 	receba outra aspas dupla ("\\"") a string é acabada e transformada em uma constante string usando
-	a função `uscapeString´. Caso receba um "\n" a string termina de modo incorreto e portanto um erro 
+	a função `uscapeString`. Caso receba um "\n" a string termina de modo incorreto e portanto um erro 
 	é gerado e o lex prossegue na linha seguinte. Caso receba um caractere null "\0" o lexer vai 
 	para o estado \<END_STRING\> deve descartar todos os caracteres até encontrar uma nova linha, 
-	um terminador de string ("\\"")	ou um fim de arquivo.
+	um terminador de string ("\\"")	ou um fim de arquivo. Caso o lexer esteja no estado \<STRING\> e 
+	receba um fim de arquivo, também é gerado um erro.
 
 	Para o comentário foram consideradas duas situações. Para o comentário em linha, apenas uma 
-	expressão regular vista na variável RE_COMMENT foi o suficiente. Para o comentário com (* e *)
-	também usou-se um estado diferente do estado inicial. Assim quando o lex ler os caracteres "(*"
-	ele vai para o estado \<COMMENT\> e descarta qualquer caractere exceto o fim de arquivo (EOF) e o "*)". Caso
-	o lex leia um "*)" o comentário é terminado e o lexer volta para o estado inicial. Caso receba um
+	expressão regular expressa na variável RE_COMMENT foi o suficiente. Para o comentário com (* e *)
+	também usou-se um estado diferente do estado inicial. Assim quando o lexer ler os caracteres "(*"
+	ele vai para o estado \<COMMENT\> e descarta qualquer caractere subsequente exceto o fim de arquivo 
+	(EOF) e o "*)". Caso
+	o lexer leia um "*)" o comentário é terminado e o lexer volta para o estado inicial. Caso receba um
 	EOF um erro é gerado com a mensagem "EOF in comment". Veja que fora do estado \<COMMENT\>, se o lexer 
 	receber um "*)" um erro é gerado com a mensagem "Unmatched *)".
 
 	Para tornar as keywords case insensitive, foi escrita uma expressão regular para cada keyword. 
 	No caso das constantes true e false a primeira letra foi deixada minuscula.
+
+	*Testes*
+
+	Observação: para verificar se o lexer estava funcionado, utilizou-se, como base de comparação, a saída do lexer pré-compilado fornecido pelo professor para os testes com o parser.
+
+	Além do teste base foram feitos alguns testes focados em pegar erros. Foram eles:
+
+		1) Teste de mudança de case de todas as palavras reservadas: para isso, utilizou-se o script generateTokens.py.
+
+		2) Teste com todos os caracteres avulsos:		
+	(‘{‘,’}’,’(‘,’)’,’,’,’:’,’@’,’.’,’;’,’+’,’-’,’*’,’/’,’~’,’<’,’=’);
+
+		3) Testes com diferentes inteiros;
+
+		4) Teste com strings variados, incluindo algumas com caracteres precedidos de \;
+
+			* No caso do ‘\n’ precedido de ‘\’, notou-se que o lexer do professor guardava o ‘\n’ como parte da string. Inicialmente, tínhamos considerado que esse ‘\n’ deveria ser descartado, porém acabamos o inserindo na string final para seguir o comportamento daquele do professor.
+
+			* No caso da string com tamanho máximo, notou-se que, embora o valor máximo esteja definido como 1025, o lexer do professor retornava erro quando a string tinha exatamente 1025 caracteres (com uma exceção apenas). Então, embora tenhamos desenvolvido o lexer inicialmente para retornar erro apenas quando a string excedia 1025 caracteres, mudamos esse comportamento para ficar igual ao do professor, exceto no caso da exceção. A exceção a que nos referimos ocorre quando a string tem exatamente 1025 caracteres, porém termina em ‘\n’. Neste caso, o lexer do professor, retorna o erro ‘Unterminated string constant’, porém o nosso retorna ‘String constant too long’, pois em todos os outros casos, tanto o nosso lexer como o do professor, uma string de 1025 caracteres retorna ‘String constant too long’.
+
+		5) Testes com comentários de uma linha (--) e de múltiplas linhas ((*...*));
+
+		6) Teste com quase todas as situações de erro:
+			* Caracteres inválidos;
+			* Strings terminadas em ‘\n’;
+			* Strings muito longas;
+			* EOF presente em comentário multilinha;
+			* Símbolos *) não casados.
+			
+		Não foram testados os erros string com caractere nulo, pois não sabíamos como gerar um \0; e string terminado em EOF, pois foi testado o EOF no caso de comentário. Além disso, para algumas máquinas, tanto o nosso lexer quanto o fornecido pelo professor geravam o erro ‘Unterminated string constant’ ao invés do ‘EOF in string constant’.
