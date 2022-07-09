@@ -122,4 +122,41 @@ Instructions
 
 Write-up for PA2
 ----------------
+- Códigos escritos
 
+	O único arquivo modificado foi o cool-flex. Nele inicialmente foi provido
+	um esqueleto de códio à esse esqueleto foram adicionadas algumas funções 
+	auxiliares bem como todas as definições necessárias para o lexer. As definições 
+	de projeto as funções auxiliares serão explicadas abaixo.
+
+	Todas as definições do lexer seguiram o manual do Lexer e o manual do cool e portanto
+	não serão detalhadas.
+	
+	*Funções auxiliares*->
+
+	int unscapeString(char *inputString, char *outputString, int length) = Copia uma string
+	criando os caracteres escapadores. Por exemplo uma string composta por 'a''\\''n' será 
+	transformada em 'a''\n'. Ela retornará a diferença de tamanho da nova string. Nesse caso
+	1.
+
+	*Decisões de projeto*->
+
+	Para a definição das strings optou-se por usar 2 estados diferentes do inicial. O inicio da 
+	identificação de uma string se inicia com "\\"". Então o o lexer vai para o estado \<STRING\>.
+	Nesse estados todo os caracteres diferentes de "\n", "\0" e "\\"" são adicionados a string. Caso
+	receba outra aspas dupla ("\\"") a string é acabada e transformada em uma constante string usando
+	a função `uscapeString´. Caso receba um "\n" a string termina de modo incorreto e portanto um erro 
+	é gerado e o lex prossegue na linha seguinte. Caso receba um caractere null "\0" o lexer vai 
+	para o estado \<END_STRING\> deve descartar todos os caracteres até encontrar uma nova linha, 
+	um terminador de string ("\\"")	ou um fim de arquivo.
+
+	Para o comentário foram consideradas duas situações. Para o comentário em linha, apenas uma 
+	expressão regular vista na variável RE_COMMENT foi o suficiente. Para o comentário com (* e *)
+	também usou-se um estado diferente do estado inicial. Assim quando o lex ler os caracteres "(*"
+	ele vai para o estado \<COMMENT\> e descarta qualquer caractere exceto o fim de arquivo (EOF) e o "*)". Caso
+	o lex leia um "*)" o comentário é terminado e o lexer volta para o estado inicial. Caso receba um
+	EOF um erro é gerado com a mensagem "EOF in comment". Veja que fora do estado \<COMMENT\>, se o lexer 
+	receber um "*)" um erro é gerado com a mensagem "Unmatched *)".
+
+	Para tornar as keywords case insensitive, foi escrita uma expressão regular para cada keyword. 
+	No caso das constantes true e false a primeira letra foi deixada minuscula.
