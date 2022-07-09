@@ -80,6 +80,7 @@ int unscapeString(char *inputString, char *outputString, int length) {
 char invalid_char[2];
 int string_length;
 int string_index = 0;
+Symbol string = nullptr;
 
 %}
 
@@ -162,8 +163,12 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
                            int diff = unscapeString(string_buf,
                            string_buf, string_length);
                            string_buf[string_length-diff] = '\0';
-                           yylval.symbol = new Entry((char *)string_buf,
-                           string_length-diff, string_index);
+                           if(string!=nullptr) {
+                               delete string;
+                           }
+			               string = new Entry((char *)string_buf,
+			               string_length-diff, string_index);
+                           yylval.symbol = string;
                            ++string_index;	
                            return (STR_CONST); }
 <STRING>"\n"             { BEGIN(INITIAL);
@@ -203,8 +208,12 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
 {RE_ELSE}                { return (ELSE); }
 {RE_CLASS}               { return (CLASS); }
 {RE_CASE}                { return (CASE); }
-{RE_TYPEID}              { yylval.symbol = new Entry((char *)yytext,
+{RE_TYPEID}              { if(string!=nullptr) {
+                               delete string;
+                           }
+                           string = new Entry((char *)yytext,
                            yyleng, string_index);
+		                   yylval.symbol = string;
                            ++string_index;	
                            return (TYPEID); }
 {RE_BOOL_CONST}          { if(yytext[0]=='t') {
@@ -213,12 +222,20 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
                                yylval.boolean = 0;
                            }
                            return (BOOL_CONST); }
-{RE_OBJECTID}            { yylval.symbol = new Entry((char *)yytext,
+{RE_OBJECTID}            { if(string!=nullptr) {
+                               delete string;
+                           }
+                           string = new Entry((char *)yytext,
                            yyleng, string_index);
+		                   yylval.symbol = string;
                            ++string_index;	
                            return (OBJECTID); }
-{RE_INT_CONST}           { yylval.symbol = new Entry((char *)yytext,
+{RE_INT_CONST}           { if(string!=nullptr) {
+                               delete string;
+                           }
+                           string = new Entry((char *)yytext,
                            yyleng, string_index);
+		                   yylval.symbol = string;
                            ++string_index;	
                            return (INT_CONST); }
 "(*"                     { BEGIN(COMMENT); }
@@ -227,11 +244,20 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
 "<-"                     { return (ASSIGN); }
 "=>"                     { return (DARROW); }
 "<="                     { return (LE); }
-<<EOF>>                  { yyterminate(); }
+<<EOF>>                  { if(string!=nullptr) {
+                               delete string;
+                           }
+			               yy_delete_buffer(YY_CURRENT_BUFFER);
+		                   yylex_destroy();
+                           yyterminate(); }
 "\""                     {  string_length = 0;
                             BEGIN(STRING); }
-{RE_CHARS}               { yylval.symbol = new Entry((char *)yytext,
+{RE_CHARS}               { if(string!=nullptr) {
+                               delete string;
+                           }
+                           string = new Entry((char *)yytext,
                            yyleng, string_index);
+		                   yylval.symbol = string;
                            ++string_index;	
                            return ((int) yytext[0]); }
 {RE_WHITE}               { ; }

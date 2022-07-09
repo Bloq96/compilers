@@ -5,7 +5,7 @@ import sys
 def main():
     tokens = ["class", "else", "false", "fi", "if", "in", "inherits",
     "isvoid", "let", "loop", "pool", "then", "while", "case", 'esac',
-    "new", "of", "not", "true"];
+    "new", "of", "not", "true","self","SELF_TYPE"];
     temp = [];
     length = 0;
     possibilities = 0;
