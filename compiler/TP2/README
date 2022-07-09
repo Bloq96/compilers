@@ -193,3 +193,5 @@ Write-up for PA2
 			* Símbolos *) não casados.
 			
 		Não foram testados os erros string com caractere nulo, pois não sabíamos como gerar um \0; e string terminado em EOF, pois foi testado o EOF no caso de comentário. Além disso, para algumas máquinas, tanto o nosso lexer quanto o fornecido pelo professor geravam o erro ‘Unterminated string constant’ ao invés do ‘EOF in string constant’.
+
+        Os casos de teste estão adquados, pois testam a maior parte das condições de entrada possíveis. Além disso, o código também está correto, pois está produzindo uma saída condizente com o lexer pré-compilado do professor.

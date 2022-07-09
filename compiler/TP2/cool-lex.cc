@@ -1,6 +1,6 @@
-#line 2 "cool-lex.cc"
+#line 1 "cool-lex.cc"
 
-#line 4 "cool-lex.cc"
+#line 3 "cool-lex.cc"
 
 #define  YY_INT_ALIGNED short int
 
@@ -741,7 +741,7 @@ int string_length;
 int string_index = 0;
 Symbol string = nullptr;
 
-#line 745 "cool-lex.cc"
+#line 744 "cool-lex.cc"
 /*
  * Define names for regular expressions here.
  */
@@ -749,7 +749,7 @@ Symbol string = nullptr;
 /*
  * RX_DARROW          =>
  */
-#line 753 "cool-lex.cc"
+#line 752 "cool-lex.cc"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -1045,7 +1045,7 @@ YY_DECL
   */
 
 
-#line 1049 "cool-lex.cc"
+#line 1048 "cool-lex.cc"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1467,7 +1467,7 @@ YY_RULE_SETUP
 #line 284 "cool.flex"
 ECHO;
 	YY_BREAK
-#line 1471 "cool-lex.cc"
+#line 1470 "cool-lex.cc"
 
 	case YY_END_OF_BUFFER:
 		{
