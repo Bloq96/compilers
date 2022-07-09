@@ -55,14 +55,46 @@ int countLines(char *string) {
     return lines;
 }
 
-int copyString(char *string1, char *string2, int length) {
-    if(string1==NULL||string2==NULL) {
-        return 1;
+int copyString(char *inputString, char *outputString, int length) {
+    if(inputString==NULL||outputString==NULL) {
+        return -1;
     }
-    for(int it = 0; it<length;++it) {
-        string2[it] = string1[it];
+    for(int it = 0; it<length; ++it) {
+        outputString[it] = inputString[it];
     }
     return 0;
+}
+
+int unscapeString(char *inputString, char *outputString, int length) {
+    if(inputString==NULL||outputString==NULL) {
+        return -1;
+    }
+    int diff = 0;
+    for(int it = 0; it<length; ++it) {
+        if(inputString[it] == '\\') {
+            ++it;
+            ++diff;
+            switch(inputString[it]) {
+                case 'b':
+                    outputString[it-diff] = '\b';
+                    break;
+                case 'f':
+                    outputString[it-diff] = '\f';
+                    break;
+                case 'n':
+                    outputString[it-diff] = '\n';
+                    break;
+                case 't':
+                    outputString[it-diff] = '\t';
+                    break;
+                default:
+                    outputString[it-diff] = inputString[it];
+            }
+        } else {
+            outputString[it-diff] = inputString[it];
+        }
+    }
+    return diff;
 }
 
 int stringToInteger(char *string, int length) {
@@ -106,6 +138,8 @@ int hasNull(char *string, int length) {
     return 0;
 }
 
+int string_index;
+
 extern YYSTYPE yylval;
 
 %}
@@ -113,6 +147,11 @@ extern YYSTYPE yylval;
 /*
  * Define names for regular expressions here.
  */
+
+%x COMMENT
+%x END_STRING
+%x STRING
+
 /*
  * RX_DARROW          =>
  */
@@ -120,9 +159,6 @@ RE_WHITE                    [\ \f\r\t\v]
 RE_WHILE                    [wW][hH][iI][lL][eE]
 RE_TYPEID                   [A-Z][a-zA-Z0-9_]*
 RE_THEN                     [tT][hH][eE][nN]
-RE_STR_ERR1                 ["]([^\0\n"]|([\\][\n]))*\Z
-RE_STR_ERR2                 ["]([\n]|(([^\0\n\"]|([\\][\n]))*[^\\\0"][\n]))
-RE_STR_CONST                ["]([^\0\n\"]|([\\][\n]))*["]
 RE_POOL                     [pP][oO]{2}[lL]
 RE_OF                       [oO][fF]
 RE_OBJECTID                 [a-z][a-zA-Z0-9_]*
@@ -139,8 +175,7 @@ RE_IF                       [iI][fF]
 RE_FI                       [fF][iI]
 RE_ESAC                     [eE][sS][aA][cC]
 RE_ELSE                     [eE][lL][sS][eE]
-RE_COMMENT_ERR1             [(][*]([^(*)]|([(][^*])|([^(][*])|([*][^)])|([^*][)]))*
-RE_COMMENT                  [(][*]([^(*)]|([(][^*])|([^(][*])|([*][^)])|([^*][)]))*[*][)]
+RE_COMMENT                  [\-][\-][^\n]*[\n]
 RE_CLASS                    [cC][lL][aA][sS]{2}
 RE_CHARS                    [{}()\[\],:@.;+\-*~<=]
 RE_CASE                     [cC][aA][sS][eE]
@@ -156,12 +191,56 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
   *  The multiple-character operators.
   */
 
-{RE_CHARS}               { yylval.string[0] = yytext[0];
-                           yylval.string[1] = '\0';
-                           return ((int) yytext[0]); }
-"<-"                     { return (ASSIGN); }
-"=>"                     { return (DARROW); }
-"<="                     { return (LE); }
+
+<COMMENT>"*)"            { BEGIN(INITIAL); }
+<COMMENT><<EOF>>         { BEGIN(INITIAL);
+                           copyString("EOF in comment",
+                           yylval.string, 14);
+                           yylval.string[14] = '\0';
+                           return (ERROR); }
+<COMMENT>"\n"            { ++curr_lineno; }
+<COMMENT>.               { ; }
+
+<END_STRING>"\\\n"       { ; }
+<END_STRING><<EOF>>      { BEGIN(INITIAL); }
+<END_STRING>"\""         { BEGIN(INITIAL); }
+<END_STRING>"\n"         { BEGIN(INITIAL); }
+<END_STRING>.            { ; }
+
+<STRING>"\\\n"           { ++curr_lineno; }
+<STRING><<EOF>>          { BEGIN(INITIAL);
+                           copyString("EOF in string constant",
+                           yylval.string, 22);
+                           yylval.string[22] = '\0';
+                           return (ERROR); }
+<STRING>"\""             { BEGIN(INITIAL);
+                           int diff = unscapeString(string_buf,
+                           yylval.string, string_index);
+                           yylval.string[string_index-diff] = '\0';
+                           return (STR_CONST); }
+<STRING>"\n"             { BEGIN(INITIAL);
+                           ++curr_lineno;
+                           copyString("Unterminated string constant",
+                           yylval.string, 28);
+                           yylval.string[28] = '\0';
+                           return (ERROR); }
+<STRING>"\0"             { BEGIN(END_STRING);
+                           copyString("String contains null character",
+                           yylval.string, 30);
+                           yylval.string[30] = '\0';
+                           return (ERROR); }
+<STRING>.                { if(string_index>=MAX_STR_CONST) {
+                               BEGIN(END_STRING);
+                               copyString("String constant too long",
+                               yylval.string, 24);
+                               yylval.string[24] = '\0';
+                               return (ERROR);
+                            }
+                            string_buf[string_index] = yytext[0];
+                            ++string_index;
+                         }
+
+{RE_COMMENT}             { ; }
 {RE_WHILE}               { return (WHILE); }
 {RE_THEN}                { return (THEN); }
 {RE_POOL}                { return (POOL); }
@@ -179,70 +258,6 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
 {RE_ELSE}                { return (ELSE); }
 {RE_CLASS}               { return (CLASS); }
 {RE_CASE}                { return (CASE); }
-{RE_BOOL_CONST}          { if(yytext[0]=='t') {
-                               yylval.boolean = true;
-                           } else {
-                               yylval.boolean = false;
-                           }
-                           return (BOOL_CONST); }
-{RE_INT_CONST}           { yylval.integer = stringToInteger(yytext, yyleng); 
-                           return (INT_CONST); }
-{RE_STR_CONST}           { if(yyleng>MAX_STR_CONST-1) {
-                               copyString("String constant too long",
-                               yylval.string, 24);
-                               yylval.string[24] = '\0';
-                               curr_lineno += countLines(yytext);
-                               return (ERROR);
-                           } 
-                           if(hasNull(yytext, yyleng)) {
-                               copyString("String contains null character",
-                               yylval.string, 30);
-                               yylval.string[30] = '\0';
-                               curr_lineno += countLines(yytext);
-                               return (ERROR);
-                           }
-                           copyString(yytext,yylval.string,yyleng);
-                           yylval.string[yyleng] = '\0';
-                           curr_lineno += countLines(yytext);
-                           return (STR_CONST); }
-{RE_STR_ERR1}            { if(yyleng>MAX_STR_CONST-1) {
-                               copyString("String constant too long",
-                               yylval.string, 24);
-                               yylval.string[24] = '\0';
-                               curr_lineno += countLines(yytext);
-                               return (ERROR);
-                           } 
-                           if(hasNull(yytext, yyleng)) {
-                               copyString("String contains null character",
-                               yylval.string, 30);
-                               yylval.string[30] = '\0';
-                               curr_lineno += countLines(yytext);
-                               return (ERROR);
-                           }
-                           copyString("EOF in string constant",
-                           yylval.string, 22);
-                           yylval.string[22] = '\0';
-                           curr_lineno += countLines(yytext);
-                           return (ERROR); }
-{RE_STR_ERR2}            { if(yyleng>MAX_STR_CONST-1) {
-                               copyString("String constant too long",
-                               yylval.string, 24);
-                               yylval.string[24] = '\0';
-                               curr_lineno += countLines(yytext);
-                               return (ERROR);
-                           } 
-                           if(hasNull(yytext, yyleng)) {
-                               copyString("String contains null character",
-                               yylval.string, 30);
-                               yylval.string[30] = '\0';
-                               curr_lineno += countLines(yytext);
-                               return (ERROR);
-                           }
-                           copyString("Unterminated string constant",
-                           yylval.string, 28);
-                           yylval.string[28] = '\0';
-                           curr_lineno += countLines(yytext);
-                           return (ERROR); }
 {RE_TYPEID}              { if(yyleng>MAX_STR_CONST-1) {
                                copyString("Type identifier too long",
                                yylval.string, 24);
@@ -253,6 +268,12 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
                            copyString(yytext,yylval.string,yyleng);
                            yylval.string[yyleng] = '\0';
                            return (TYPEID); }
+{RE_BOOL_CONST}          { if(yytext[0]=='t') {
+                               yylval.boolean = true;
+                           } else {
+                               yylval.boolean = false;
+                           }
+                           return (BOOL_CONST); }
 {RE_OBJECTID}            { if(yyleng>MAX_STR_CONST-1) {
                                copyString("Object identifier too long",
                                yylval.string, 26);
@@ -263,14 +284,24 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
                            copyString(yytext,yylval.string,yyleng);
                            yylval.string[yyleng] = '\0';
                            return (OBJECTID); }
-"\n"                     { ++curr_lineno; }
-{RE_WHITE}               { ; }
-{RE_COMMENT}             { curr_lineno += countLines(yytext); }
-{RE_COMMENT_ERR1}        { copyString("EOF in comment",
-                           yylval.string, 14);
-                           yylval.string[14] = '\0';
-                           curr_lineno += countLines(yytext);
+{RE_INT_CONST}           { yylval.integer = stringToInteger(yytext, yyleng); 
+                           return (INT_CONST); }
+"(*"                     { BEGIN(COMMENT); }
+"*)"                     { copyString("Unmatched *)",
+                           yylval.string, 12);
+                           yylval.string[12] = '\0';
                            return (ERROR); }
+"<-"                     { return (ASSIGN); }
+"=>"                     { return (DARROW); }
+"<="                     { return (LE); }
+<<EOF>>                  { yyterminate(); }
+"\""                     {  string_index = 0;
+                            BEGIN(STRING); }
+{RE_CHARS}               { yylval.string[0] = yytext[0];
+                           yylval.string[1] = '\0';
+                           return ((int) yytext[0]); }
+{RE_WHITE}               { ; }
+"\n"                     { ++curr_lineno; }
 .                        { yylval.string[0] = yytext[0];
                            yylval.string[1] = '\0';
                            return (ERROR); }

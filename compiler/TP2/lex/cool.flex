@@ -13,8 +13,8 @@
 #include <utilities.h>
 
 /* The compiler assumes these identifiers. */
-//#define yylval cool_yylval
-//#define yylex  cool_yylex
+#define yylval cool_yylval
+#define yylex  cool_yylex
 
 /* Max size of string constants */
 #define MAX_STR_CONST 1025
@@ -44,26 +44,6 @@ extern YYSTYPE cool_yylval;
  */
 
 #include <stdbool.h>
-
-int countLines(char *string) {
-    int lines = 0;
-    for(int it = 0; string[it] != '\0'; ++it) {
-        if(string[it] == '\n') {
-            ++lines;
-        }
-    }
-    return lines;
-}
-
-int copyString(char *inputString, char *outputString, int length) {
-    if(inputString==NULL||outputString==NULL) {
-        return -1;
-    }
-    for(int it = 0; it<length; ++it) {
-        outputString[it] = inputString[it];
-    }
-    return 0;
-}
 
 int unscapeString(char *inputString, char *outputString, int length) {
     if(inputString==NULL||outputString==NULL) {
@@ -97,50 +77,10 @@ int unscapeString(char *inputString, char *outputString, int length) {
     return diff;
 }
 
-int stringToInteger(char *string, int length) {
-    if(string==NULL||length==0) {
-        return 0;
-    }
-
-    int it = 0;
-    int signal = 1;
-
-    if(string[it]=='-') {
-        signal *= -1;
-        ++it; 
-    } else if(string[it]=='+') {
-        ++it;
-    }
-
-    int result = 0;
-    int value;
-
-    while(it<length) {
-        value = (int) string[it];
-        result *= 10;
-        if(value>=48&&value<=57) {
-            result += value - 48;
-        } else {
-            return 0;
-        }
-        ++it;
-    }
-
-    return signal*result;
-}
-
-int hasNull(char *string, int length) {
-    for(int it=0; it<length; ++it) {
-        if(string[it]=='\0') {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-int string_index;
-
-extern YYSTYPE yylval;
+char invalid_char[2];
+int string_length;
+int string_index = 0;
+Symbol string = nullptr;
 
 %}
 
@@ -165,7 +105,6 @@ RE_OBJECTID                 [a-z][a-zA-Z0-9_]*
 RE_NOT                      [nN][oO][tT]
 RE_NEW                      [nN][eE][wW]
 RE_LOOP                     [lL][oO]{2}[pP]
-RE_LIN_CMT                  --.*
 RE_LET                      [lL][eE][tT]
 RE_ISVOID                   [iI][sS][vV][oO][iI][dD]
 RE_INT_CONST                [0-9]+
@@ -177,7 +116,7 @@ RE_ESAC                     [eE][sS][aA][cC]
 RE_ELSE                     [eE][lL][sS][eE]
 RE_COMMENT                  [\-][\-][^\n]*[\n]
 RE_CLASS                    [cC][lL][aA][sS]{2}
-RE_CHARS                    [{}()\[\],:@.;+\-*~<=]
+RE_CHARS                    [{}(),:@.;+\-*/~<=]
 RE_CASE                     [cC][aA][sS][eE]
 RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
 
@@ -194,53 +133,64 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
 
 <COMMENT>"*)"            { BEGIN(INITIAL); }
 <COMMENT><<EOF>>         { BEGIN(INITIAL);
-                           copyString("EOF in comment",
-                           yylval.string, 14);
-                           yylval.string[14] = '\0';
+                           yylval.error_msg =
+                           (char *)"EOF in comment";
                            return (ERROR); }
 <COMMENT>"\n"            { ++curr_lineno; }
 <COMMENT>.               { ; }
 
-<END_STRING>"\\\n"       { ; }
+<END_STRING>"\\\n"       { ++curr_lineno; }
 <END_STRING><<EOF>>      { BEGIN(INITIAL); }
 <END_STRING>"\""         { BEGIN(INITIAL); }
-<END_STRING>"\n"         { BEGIN(INITIAL); }
+<END_STRING>"\n"         { BEGIN(INITIAL);
+                           ++curr_lineno; }
 <END_STRING>.            { ; }
 
-<STRING>"\\\n"           { ++curr_lineno; }
+<STRING>"\\\n"           { ++curr_lineno;
+                           if(string_length>=(MAX_STR_CONST-1)) {
+                               BEGIN(END_STRING);
+                               yylval.error_msg =
+                               (char *)"String constant too long";
+                               return (ERROR);
+                            }
+                            string_buf[string_length] = '\n';
+                            ++string_length; }
 <STRING><<EOF>>          { BEGIN(INITIAL);
-                           copyString("EOF in string constant",
-                           yylval.string, 22);
-                           yylval.string[22] = '\0';
+                           yylval.error_msg =
+                           (char *)"EOF in string constant";
                            return (ERROR); }
 <STRING>"\""             { BEGIN(INITIAL);
                            int diff = unscapeString(string_buf,
-                           yylval.string, string_index);
-                           yylval.string[string_index-diff] = '\0';
+                           string_buf, string_length);
+                           string_buf[string_length-diff] = '\0';
+                           if(string!=nullptr) {
+                               delete string;
+                           }
+			               string = new Entry((char *)string_buf,
+			               string_length-diff, string_index);
+                           yylval.symbol = string;
+                           ++string_index;	
                            return (STR_CONST); }
 <STRING>"\n"             { BEGIN(INITIAL);
                            ++curr_lineno;
-                           copyString("Unterminated string constant",
-                           yylval.string, 28);
-                           yylval.string[28] = '\0';
+                           yylval.error_msg =
+                           (char *)"Unterminated string constant";
                            return (ERROR); }
 <STRING>"\0"             { BEGIN(END_STRING);
-                           copyString("String contains null character",
-                           yylval.string, 30);
-                           yylval.string[30] = '\0';
+                           yylval.error_msg =
+                           (char *)"String contains null character";
                            return (ERROR); }
-<STRING>.                { if(string_index>=MAX_STR_CONST) {
+<STRING>.                {
+                           if(string_length>=(MAX_STR_CONST-1)) {
                                BEGIN(END_STRING);
-                               copyString("String constant too long",
-                               yylval.string, 24);
-                               yylval.string[24] = '\0';
+                               yylval.error_msg =
+                               (char *)"String constant too long";
                                return (ERROR);
-                            }
-                            string_buf[string_index] = yytext[0];
-                            ++string_index;
-                         }
+                           }
+                           string_buf[string_length] = yytext[0];
+                           ++string_length; }
 
-{RE_COMMENT}             { ; }
+{RE_COMMENT}             { ++curr_lineno; }
 {RE_WHILE}               { return (WHILE); }
 {RE_THEN}                { return (THEN); }
 {RE_POOL}                { return (POOL); }
@@ -258,52 +208,63 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
 {RE_ELSE}                { return (ELSE); }
 {RE_CLASS}               { return (CLASS); }
 {RE_CASE}                { return (CASE); }
-{RE_TYPEID}              { if(yyleng>MAX_STR_CONST-1) {
-                               copyString("Type identifier too long",
-                               yylval.string, 24);
-                               yylval.string[24] = '\0';
-                               curr_lineno += countLines(yytext);
-                               return (ERROR);
+{RE_TYPEID}              { if(string!=nullptr) {
+                               delete string;
                            }
-                           copyString(yytext,yylval.string,yyleng);
-                           yylval.string[yyleng] = '\0';
+                           string = new Entry((char *)yytext,
+                           yyleng, string_index);
+		                   yylval.symbol = string;
+                           ++string_index;	
                            return (TYPEID); }
 {RE_BOOL_CONST}          { if(yytext[0]=='t') {
-                               yylval.boolean = true;
+                               yylval.boolean = 1;
                            } else {
-                               yylval.boolean = false;
+                               yylval.boolean = 0;
                            }
                            return (BOOL_CONST); }
-{RE_OBJECTID}            { if(yyleng>MAX_STR_CONST-1) {
-                               copyString("Object identifier too long",
-                               yylval.string, 26);
-                               yylval.string[26] = '\0';
-                               curr_lineno += countLines(yytext);
-                               return (ERROR);
+{RE_OBJECTID}            { if(string!=nullptr) {
+                               delete string;
                            }
-                           copyString(yytext,yylval.string,yyleng);
-                           yylval.string[yyleng] = '\0';
+                           string = new Entry((char *)yytext,
+                           yyleng, string_index);
+		                   yylval.symbol = string;
+                           ++string_index;	
                            return (OBJECTID); }
-{RE_INT_CONST}           { yylval.integer = stringToInteger(yytext, yyleng); 
+{RE_INT_CONST}           { if(string!=nullptr) {
+                               delete string;
+                           }
+                           string = new Entry((char *)yytext,
+                           yyleng, string_index);
+		                   yylval.symbol = string;
+                           ++string_index;	
                            return (INT_CONST); }
 "(*"                     { BEGIN(COMMENT); }
-"*)"                     { copyString("Unmatched *)",
-                           yylval.string, 12);
-                           yylval.string[12] = '\0';
+"*)"                     { yylval.error_msg = (char *)"Unmatched *)";
                            return (ERROR); }
 "<-"                     { return (ASSIGN); }
 "=>"                     { return (DARROW); }
 "<="                     { return (LE); }
-<<EOF>>                  { yyterminate(); }
-"\""                     {  string_index = 0;
+<<EOF>>                  { if(string!=nullptr) {
+                               delete string;
+                           }
+			               yy_delete_buffer(YY_CURRENT_BUFFER);
+		                   yylex_destroy();
+                           yyterminate(); }
+"\""                     {  string_length = 0;
                             BEGIN(STRING); }
-{RE_CHARS}               { yylval.string[0] = yytext[0];
-                           yylval.string[1] = '\0';
+{RE_CHARS}               { if(string!=nullptr) {
+                               delete string;
+                           }
+                           string = new Entry((char *)yytext,
+                           yyleng, string_index);
+		                   yylval.symbol = string;
+                           ++string_index;	
                            return ((int) yytext[0]); }
 {RE_WHITE}               { ; }
 "\n"                     { ++curr_lineno; }
-.                        { yylval.string[0] = yytext[0];
-                           yylval.string[1] = '\0';
+.                        { invalid_char[0] = yytext[0];
+                           invalid_char[1] = '\0';
+                           yylval.error_msg = invalid_char;
                            return (ERROR); }
  /*
   * Keywords are case-insensitive except for the values true and false,

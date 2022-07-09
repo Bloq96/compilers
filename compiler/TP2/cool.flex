@@ -45,26 +45,6 @@ extern YYSTYPE cool_yylval;
 
 #include <stdbool.h>
 
-int countLines(char *string) {
-    int lines = 0;
-    for(int it = 0; string[it] != '\0'; ++it) {
-        if(string[it] == '\n') {
-            ++lines;
-        }
-    }
-    return lines;
-}
-
-int copyString(char *inputString, char *outputString, int length) {
-    if(inputString==NULL||outputString==NULL) {
-        return -1;
-    }
-    for(int it = 0; it<length; ++it) {
-        outputString[it] = inputString[it];
-    }
-    return 0;
-}
-
 int unscapeString(char *inputString, char *outputString, int length) {
     if(inputString==NULL||outputString==NULL) {
         return -1;
@@ -97,47 +77,6 @@ int unscapeString(char *inputString, char *outputString, int length) {
     return diff;
 }
 
-int stringToInteger(char *string, int length) {
-    if(string==NULL||length==0) {
-        return 0;
-    }
-
-    int it = 0;
-    int signal = 1;
-
-    if(string[it]=='-') {
-        signal *= -1;
-        ++it; 
-    } else if(string[it]=='+') {
-        ++it;
-    }
-
-    int result = 0;
-    int value;
-
-    while(it<length) {
-        value = (int) string[it];
-        result *= 10;
-        if(value>=48&&value<=57) {
-            result += value - 48;
-        } else {
-            return 0;
-        }
-        ++it;
-    }
-
-    return signal*result;
-}
-
-int hasNull(char *string, int length) {
-    for(int it=0; it<length; ++it) {
-        if(string[it]=='\0') {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 char invalid_char[2];
 int string_length;
 int string_index = 0;
@@ -166,7 +105,6 @@ RE_OBJECTID                 [a-z][a-zA-Z0-9_]*
 RE_NOT                      [nN][oO][tT]
 RE_NEW                      [nN][eE][wW]
 RE_LOOP                     [lL][oO]{2}[pP]
-RE_LIN_CMT                  --.*
 RE_LET                      [lL][eE][tT]
 RE_ISVOID                   [iI][sS][vV][oO][iI][dD]
 RE_INT_CONST                [0-9]+
@@ -178,7 +116,7 @@ RE_ESAC                     [eE][sS][aA][cC]
 RE_ELSE                     [eE][lL][sS][eE]
 RE_COMMENT                  [\-][\-][^\n]*[\n]
 RE_CLASS                    [cC][lL][aA][sS]{2}
-RE_CHARS                    [{}()\[\],:@.;+\-*~<=]
+RE_CHARS                    [{}(),:@.;+\-*/~<=]
 RE_CASE                     [cC][aA][sS][eE]
 RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
 
@@ -201,13 +139,22 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
 <COMMENT>"\n"            { ++curr_lineno; }
 <COMMENT>.               { ; }
 
-<END_STRING>"\\\n"       { ; }
+<END_STRING>"\\\n"       { ++curr_lineno; }
 <END_STRING><<EOF>>      { BEGIN(INITIAL); }
 <END_STRING>"\""         { BEGIN(INITIAL); }
-<END_STRING>"\n"         { BEGIN(INITIAL); }
+<END_STRING>"\n"         { BEGIN(INITIAL);
+                           ++curr_lineno; }
 <END_STRING>.            { ; }
 
-<STRING>"\\\n"           { ++curr_lineno; }
+<STRING>"\\\n"           { ++curr_lineno;
+                           if(string_length>=(MAX_STR_CONST-1)) {
+                               BEGIN(END_STRING);
+                               yylval.error_msg =
+                               (char *)"String constant too long";
+                               return (ERROR);
+                            }
+                            string_buf[string_length] = '\n';
+                            ++string_length; }
 <STRING><<EOF>>          { BEGIN(INITIAL);
                            yylval.error_msg =
                            (char *)"EOF in string constant";
@@ -233,17 +180,17 @@ RE_BOOL_CONST               (([t][rR][uU][eE])|([f][aA][lL][sS][eE]))
                            yylval.error_msg =
                            (char *)"String contains null character";
                            return (ERROR); }
-<STRING>.                { if(string_length>=MAX_STR_CONST) {
+<STRING>.                {
+                           if(string_length>=(MAX_STR_CONST-1)) {
                                BEGIN(END_STRING);
                                yylval.error_msg =
                                (char *)"String constant too long";
                                return (ERROR);
-                            }
-                            string_buf[string_length] = yytext[0];
-                            ++string_length;
-                         }
+                           }
+                           string_buf[string_length] = yytext[0];
+                           ++string_length; }
 
-{RE_COMMENT}             { ; }
+{RE_COMMENT}             { ++curr_lineno; }
 {RE_WHILE}               { return (WHILE); }
 {RE_THEN}                { return (THEN); }
 {RE_POOL}                { return (POOL); }
