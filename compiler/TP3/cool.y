@@ -70,12 +70,26 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 %type <program> program
 %type <classes> class_list
 %type <class_> class
-
 /* You will want to change the following line. */
 %type <features> dummy_feature_list
+%type <feature> feature
+%type <formals> formal_list
+%type <formal> formal
+%type <expressions> expr_list dummy_expr_list
+%type <expression> expr
+%type <cases> case_match_list
+%type <case_> case_match
 
 /* Precedence declarations go here. */
-
+%right ASSIGN
+%left NOT
+%left LE '<' '='
+%left '+' '-'
+%left '*' '/'
+%left ISVOID
+%left '~'
+%left '@'
+%left '.'
 
 %%
 /* 
@@ -84,26 +98,104 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 program	: class_list	{ ast_root = program($1);}
         ;
 
-class_list : class			/* single class */
-		{ $$ = single_Classes($1);
-                  parse_results = $$; }
-	| class_list class	/* several classes */
-		{ $$ = append_Classes($1,single_Classes($2)); 
-                  parse_results = $$; }
-	;
+class_list : class			/* single class */            { $$ = single_Classes($1);
+                                                        parse_results = $$; }
+	         | class_list class	                        { $$ = append_Classes($1,single_Classes($2)); 
+                                                        parse_results = $$; }
+	         ;
 
 /* If no parent is specified, the class inherits from the Object class. */
-class	: CLASS TYPEID '{' dummy_feature_list '}' ';'
-		{ $$ = class_($2,idtable.add_string("Object"),$4,
-			      stringtable.add_string(curr_filename)); }
-	| CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
-		{ $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
-	;
+class	: CLASS TYPEID '{' dummy_feature_list '}' ';'		{ $$ = class_($2,idtable.add_string("Object"),$4,
+			                                                  stringtable.add_string(curr_filename)); }
+	    | CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
+                                                      { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+	    ;
 
 /* Feature list may be empty, but no empty features in list. */
-dummy_feature_list:		/* empty */
-                {  $$ = nil_Features(); }
+dummy_feature_list :		/* empty */                   { $$ = nil_Features(); }
+                   | dummy_feature_list feature       { $$ = append_Features($1,single_Features($2));}
+                   ;
 
+feature : OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' ';' { $$ = method($1,
+                                                                     nil_Formals(),
+                                                                     $5,
+                                                                     $7); }
+        | OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}' ';'
+                                                      { $$ = method($1,
+                                                                    append_Formals($4, single_Formals($3)),
+                                                                    $7,
+                                                                    $9); }
+        | OBJECTID ':' TYPEID ';'                     { $$ = attr($1,
+                                                                  $3,
+                                                                  no_expr());}
+        | OBJECTID ':' TYPEID ASSIGN expr ';'         { $$ = attr($1,
+                                                                  $3,
+                                                                  $5);}
+        ;
+
+formal_list : /* empty */                             { $$ = nil_Formals();}
+            | formal_list ',' formal                  { $$ = append_Formals($1, single_Formals($3));}
+            ;
+        
+formal : OBJECTID ':' TYPEID                          { $$ = formal($1, $2);}
+
+expr_list : expr                           { $$ = single_Expressions($1); }
+          | expr_list expr ';'             { $$ = append_Expressions($1,
+                                                                     single_Expressions($2)); }
+          ;
+
+dummy_expr_list : /* empty */               { $$ = nil_Expressions(); }
+                | dummy_expr_list ',' expr  { $$ = append_Expressions($1
+                                                                      single_Expressions($3);}
+                ;
+
+let_assign : OBJECTID ':' TYPEID 
+           | OBJECTID ':' TYPEID ASSIGN expr
+           ;
+
+let_assign_list : let_assign
+                | let_assign_list ',' let_assign
+                ;
+
+case_match : OBJECTID ':' TYPEID DARROW expr ';' { $$ = branch($1, $3, $5);}
+           ;
+
+case_match_list : case_match                { $$ = single_Cases($1); }
+                | case_match_list case_match_list 
+                                            { $$ = append_Cases($1, single_Cases($2)); }
+                ;
+
+expr : OBJECTID ASSIGN expr                 { $$ = assign($1, $3); }
+     | expr '.' OBJECTID '(' ')'            { $$ = dispatch($1, $3, nil_Expressions()); }  
+     | expr '.' OBJECTID '(' expr dummy_expr_list ')'
+                                            { $$ = dispatch($1, $3, 
+                                                      append_Expressions($6,
+                                                                  single_Expressions($5)));}
+     | expr '@' TYPEID '.' OBJECTID '(' ')' { $$ = static}
+     | expr '@' TYPEID '.' OBJECTID '(' expr dummy_expr_list ')'
+     | OBJECTID '(' ')'
+     | OBJECTID '(' expr dummy_expr_list ')'
+     | IF expr THEN expr ELSE expr FI
+     | WHILE expr LOOP expr POOL
+     | '{' expr_list '}'
+     | LET let_assign_list IN expr
+     | CASE expr OF case_match_list ESAC
+     | NEW TYPEID
+     | ISVOID expr
+     | expr '+' expr
+     | expr '-' expr
+     | expr '*' expr
+     | expr '/' expr
+     | '~' expr
+     | expr '<' expr
+     | expr LE expr
+     | expr '=' expr
+     | NOT expr
+     | '(' expr ')'
+     | OBJECTID
+     | INT_CONST
+     | STR_CONST
+     | BOOL_CONST
 
 /* end of grammar */
 %%
