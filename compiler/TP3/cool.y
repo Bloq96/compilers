@@ -13,7 +13,7 @@ extern char *curr_filename;
 
 void yyerror(char *s);        /*  defined below; called for each parse error */
 extern int yylex();           /*  the entry point to the lexer  */
-
+extern int node_lineno;
 
 /************************************************************************/
 /*                DONT CHANGE ANYTHING IN THIS SECTION                  */
@@ -83,6 +83,9 @@ int omerrs = 0;               /* number of errors in lexing and parsing */
 %type <expression> let_list
 
 /* Precedence declarations go here. */
+%left LETPREC
+%left CALLPREC
+%nonassoc '('
 %right ASSIGN
 %left NOT
 %left LE '<' '='
@@ -110,7 +113,8 @@ class_list : class			/* single class */            { $$ = single_Classes($1);
 class	: CLASS TYPEID '{' dummy_feature_list '}' ';'		{ $$ = class_($2,idtable.add_string((char *)"Object"),$4,
 			                                                  stringtable.add_string(curr_filename)); }
 	    | CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
-                                                      { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+                                                      { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); 
+                                                         }
 	    ;
 
 /* Feature list may be empty, but no empty features in list. */
@@ -151,7 +155,7 @@ dummy_expr_list : /* empty */               { $$ = nil_Expressions(); }
                                                                       single_Expressions($3));}
                 ;
 
-let_list : IN expr                          { $$ = $2; }
+let_list : IN expr           %prec LETPREC  { $$ = $2; }
          | ',' OBJECTID ':' TYPEID let_list { $$ = let($2, $4, no_expr(), $5); } 
          | ',' OBJECTID ':' TYPEID ASSIGN expr let_list { $$ = let($2, $4, $6, $7); }                 
          ;
@@ -175,9 +179,10 @@ expr : OBJECTID ASSIGN expr                 { $$ = assign($1, $3); }
                                             { $$ = static_dispatch($1, $3, $5,
                                                       append_Expressions($8,
                                                                   single_Expressions($7))); }
-     | OBJECTID '(' ')'                     { $$ = dispatch(no_expr(), $1, nil_Expressions()); }
-     | OBJECTID '(' expr dummy_expr_list ')' {$$ = dispatch(no_expr(), $1,
-                                                      append_Expressions($4,
+     | OBJECTID '(' ')'                     { $$ = dispatch(object(idtable.add_string((char *)"self")), 
+                                                      $1, nil_Expressions()); }
+     | OBJECTID '(' expr dummy_expr_list ')' {$$ = dispatch(object(idtable.add_string((char *)"self")),
+                                                      $1, append_Expressions($4,
                                                                   single_Expressions($3))); }
      | IF expr THEN expr ELSE expr FI       { $$ = cond($2, $4, $6); }
      | WHILE expr LOOP expr POOL            { $$ = loop($2, $4); }
@@ -197,7 +202,7 @@ expr : OBJECTID ASSIGN expr                 { $$ = assign($1, $3); }
      | expr '=' expr                        { $$ = eq($1, $3); }
      | NOT expr                             { $$ = neg($2); }
      | '(' expr ')'                         { $$ = $2; }
-     | OBJECTID                             { $$ = object($1); }
+     | OBJECTID              %prec CALLPREC { $$ = object($1); }
      | INT_CONST                            { $$ = int_const($1); }
      | STR_CONST                            { $$ = string_const($1); }
      | BOOL_CONST                           { $$ = bool_const($1); }
