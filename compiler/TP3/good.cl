@@ -1,5 +1,5 @@
 class A {
-  --  teste : Int;
+   teste : Int <- let x : Int, y: Int, z : Int in 10;
 
 };
 

@@ -113,7 +113,7 @@ extern int cool_yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 27 "cool.y"
+#line 50 "cool.y"
 
   Boolean boolean;
   Symbol symbol;
@@ -129,8 +129,10 @@ union YYSTYPE
   Expression expression;
   Expressions expressions;
   char *error_msg;
+  Let_structure letS;
+  ListLet * listLet;
 
-#line 134 "cool.tab.h"
+#line 136 "cool.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
