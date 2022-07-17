@@ -144,12 +144,6 @@ Write-up for PA3
 ----------------
 Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
        Marcos Willian de Sales Reis - 2017002687
-Erroos adcionais
-Let com apenas o erro na variávelfinal e quando so tem um
-parametros de função e corpo de função
-
-casos errados no case;
-casos errados na expressão case
 
 - Códigos escritos
 
@@ -166,7 +160,7 @@ casos errados na expressão case
 	estrutura Let_structure base e uma lista de estrturas
 	Let_structure.
 	- void yyerror(char *): Função para impressão dos erros
-	econtrados pelo parser.
+	encontrados pelo parser.
 
 	Union com todas as ações que podem ser resultado do
 	parseamento: foram incluídos dois novos atributos a essa
@@ -182,15 +176,15 @@ casos errados na expressão case
 
 	Definição de ordem de precedência: Da maior para a menor,
 	foi definida a seguinte ordem de precedência: ., @, ~,
-	isvoid, * e /, + e -, <= e < e =, not, <-, (, chamda de
+	isvoid, * e /, + e -, <= e < e =, not, <-, (, chamada de
 	função, let. Sendo que todas esses elementos foram definidos
-	como associativos a esquerta, exceto o (, que foi definido
+	como associativos a esquerda, exceto o (, que foi definido
 	como não associativo e o <-, que foi definido como
 	associativo à direita.
 
 	Regras de derivação:
 	- Um não terminal do tipo program pode derivar uma lista de
-	classes (class_list). Como reultado, gera-se uma AST, cuja
+	classes (class_list). Como resultado, gera-se uma AST, cuja
 	raiz ;
 	- Uma class_list pode derivar outra class_list seguida de uma
 	outra classe (class) ou uma única classe. Em ambos os casos,
@@ -212,14 +206,14 @@ casos errados na expressão case
 	não de inicialização. No caso dos métodos, cria-se um nó de
 	método com o Id dele, sua lista de parâmetros, seu tipo de
 	retorno e seu corpo. No caso dos membros, cria-se um nó de
-	atributo com o seu Id, tipo e prossivel expressão de valor.
+	atributo com o seu Id, tipo e prossível expressão de valor.
 	Erros podem surgir no que deveria ser a expressão do corpo
 	do método ou no que deveria ser a lista de parâmetros dele.
 	- Uma formal_list pode derivar uma formal_list seguido de
 	um parâmetro (formal) separados por vírgula ou nada (lista
 	de parâmetros vazia). Produz-se, então, uma lista com os nós
 	de formal.
-	- Um formal deriva uma expresão de parâmetro formal, da qual
+	- Um formal deriva uma expressão de parâmetro formal, da qual
 	se criará um nó de parâmetro a partir do Id e do tipo
 	presentes na expressão.
 	- Um expr_list deriva uma expr ou uma list de expressões
@@ -227,7 +221,7 @@ casos errados na expressão case
 	em ';'. O resultado da derivação é uma lista de nós de
 	expressão. Outras derivações resultam em erro.
 	- Uma dummy_expr_list pode derivar nada (lista vazia) ou
-	uma dummy_expr_list sequida de expr separadas por uma
+	uma dummy_expr_list seguida de expr separadas por uma
 	vírgula. O resultado dessa derivação também é uma lista
 	de nós do tipo expressão.
 	- Um let_declare gera uma expressão de declaração de variável
@@ -249,7 +243,7 @@ casos errados na expressão case
 	case_match.
 	- Um expr apresenta múltiplas derivações que resultam em seus
 	respectivos nós da AST. São elas: atribuição, chamada de
-	método (com ou sem parâmtero e com ou sem indicação de classe
+	método (com ou sem parâmetro e com ou sem indicação de classe
 	ancestral), chamada de função, if, while/loop, let, case, new,
 	isvoid, soma, subtração, multiplicação, divisão, desigualdade
 	(menor que, menor ou igual a), igualdade, negação lógica, nome
@@ -264,4 +258,24 @@ casos errados na expressão case
 
 	good.cl: 
 
-	bad.cl: 
+
+
+	bad.cl: Foram testados os erros nos casos base: nome de tipo
+	incorreto (deve ter caracteres alfa-numéricos iniciados com
+	uma letra maiúscula), erro na escrita de palavras reservadas,
+	descasamento do abre-fecha chaves.
+	
+	Além desses casos base foram testados também os erros:
+	- Classe mal configurada: dever-se-ia continuar a análise a
+	partir da próxima class;
+	- feature com erro: devem estar terminadas com ';' e, em caso,
+	de erro, deve-se seguir para a próxima feature;
+	- Erro na variável do let: pula-se para a próxima variável.
+	- Case match errado: continua o parsing a partir do próximo
+	case;
+	- Erro em métodos: verifica-se se há erros nos parâmetros e,
+	se houver, pula-se para a análise do corpo do método para
+	averiguar se há erro nele também.
+	- Erro na última variável do let: também verifica-se o corpo
+	do let se houver erro na última variável dele.
+	
