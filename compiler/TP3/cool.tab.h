@@ -113,7 +113,7 @@ extern int cool_yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 50 "cool.y"
+#line 64 "cool.y"
 
   Boolean boolean;
   Symbol symbol;
@@ -140,9 +140,23 @@ typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+/* Location type.  */
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+};
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
+
 
 extern YYSTYPE cool_yylval;
-
+extern YYLTYPE cool_yylloc;
 int cool_yyparse (void);
 
 #endif /* !YY_COOL_YY_COOL_TAB_H_INCLUDED  */
