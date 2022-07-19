@@ -169,9 +169,9 @@ dummy_feature_list :		/* empty */  { $$ = nil_Features(); }
 feature : OBJECTID '(' ')' ':' TYPEID '{' expr '}' ';' 
           { @$ = @1;
             $$ = method($1, nil_Formals(), $5, $7); }
-        | OBJECTID '(' formal formal_list ')' ':' TYPEID '{' expr '}' ';'
+        | OBJECTID '(' formal_list formal ')' ':' TYPEID '{' expr '}' ';'
           { @$ = @1;
-            $$ = method($1, append_Formals($4, single_Formals($3)), $7, $9); }
+            $$ = method($1, append_Formals($3, single_Formals($4)), $7, $9); }
         | OBJECTID ':' TYPEID ';'                     
           { SET_NODELOC(0);
             Expression no_expr_temp = no_expr();
@@ -181,14 +181,14 @@ feature : OBJECTID '(' ')' ':' TYPEID '{' expr '}' ';'
           { @$ = @1;
             $$ = attr($1, $3, $5);}
         | OBJECTID '(' ')' ':' TYPEID '{' error  ';' {}
-        | OBJECTID '(' formal formal_list ')' ':' TYPEID '{' error ';' {}
+        | OBJECTID '(' formal_list formal ')' ':' TYPEID '{' error ';' {}
         | OBJECTID '(' error ')' ':' TYPEID '{' error ';' {}
         | OBJECTID '(' error ')' ':' TYPEID '{' expr '}' ';' {}
         ;
 
 formal_list : /* empty */  { $$ = nil_Formals();}
-            | formal_list ',' formal                  
-              { $$ = append_Formals($1, single_Formals($3));}
+            | formal_list formal ','
+              { $$ = append_Formals($1, single_Formals($2));}
             ;
         
 formal : OBJECTID ':' TYPEID                          
