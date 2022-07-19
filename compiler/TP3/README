@@ -304,11 +304,13 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 - Casos de erro previstos
 	Os casos de erros previstos e o tratamento adotado pelo parser
 	são:
-	- Classe mal definida: dever-se-ia continuar a análise a
-	partir da próxima class;
+	- Classe mal definida: caso uma classe possua algum erro
+	de definição, porem é corretamente terminada com um ';',
+	todos os tokes são descartados até o ';' de fechamento da classe
 	- feature com erro: devem estar terminadas com ';' e, em caso,
 	de erro, deve-se seguir para a próxima feature;
-	- Erro na variável do let: pula-se para a próxima variável.
+	- Erro na variável do let: caso exista um erro em alguma 
+	declaração pula-se para a próxima variável.
 	- Case match errado: continua o parsing a partir do próximo
 	case;
 	- Expressão case errada: continua no primeiro case match após
@@ -318,6 +320,9 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 	averiguar se há erro nele também.
 	- Erro na última variável do let: também verifica-se o corpo
 	do let se houver erro na última variável dele.
+	- Erro em um bloco: caso uma expressão esteja com erro porém 
+	é bem terminada com um ';', pula-se essa expressão e 
+	continua-se na proxima expressão após o ';'.
 
 - Testes realizados
 
@@ -354,10 +359,33 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 	foram testadas pelo menos uma vez para situações básicas neste
 	arquivo.
 
-	bad.cl: Foram testados os erros nos casos base: nome de tipo
-	incorreto (deve ter caracteres alfa-numéricos iniciados com
-	uma letra maiúscula), erro na escrita de palavras reservadas,
-	descasamento do abre-fecha chaves.
+	bad.cl: Foram testados primeiramente todos os casos de erros
+	previstos. Isso foi realizado dentro da classe A. Foi testado
+	erros na declaração do let, erros na ultima variável, erros
+	em corpos de métodos, erros em definição de parâmetros formais,
+	erros em expressão em blocos, erros na expressão do case e por fim
+	erros em algum *case match*. 
+
+	Em seguida testou-se erros na definição de classes. Foi observado
+	que em todos os erros de definições o parser retomou na definição
+	da próxima classe.
+
+	Por fim, foram testados erros em todas a produções de features e 
+	expressões. Isso foi realizado na classe F. Primeiramente foi testado
+	erros na declaração de features. Logo em seguida foi testado erros de 
+	cada produção para as expressões.
+
+	Foi constatado que para todos os casos de erros testados o comportamento 
+	foi o esperado. A saber, em algum erro de alguma feature, o parser 
+	continuou na próxima feature. Para o erro em alguma declaração do let,
+	o parser continuou na proxima variável. Em blocos, em expressões erradas
+	o parser descartou os erros e continuou no proximo ';'. Para erros na
+	expressão case, o parser continuou para os casos de match. Para algum
+	erro em algum case match, o parser continuou para o proximo 
+	case match. 
+
+	Portanto, conclui-se que o funcionamento do parser é de acordo com o esperado
+	e pode ser usado no processo de compilação da linguagem cool.
 	
 
 

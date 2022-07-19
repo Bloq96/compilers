@@ -180,8 +180,8 @@ feature : OBJECTID '(' ')' ':' TYPEID '{' expr '}' ';'
         | OBJECTID ':' TYPEID ASSIGN expr ';'         
           { @$ = @1;
             $$ = attr($1, $3, $5);}
-        | OBJECTID '(' ')' ':' TYPEID '{' error  ';' {}
-        | OBJECTID '(' formal_list formal ')' ':' TYPEID '{' error ';' {}
+        | OBJECTID '(' ')' error  ';' {}
+        | OBJECTID '(' formal_list formal ')' error ';' {}
         | OBJECTID '(' error ')' ':' TYPEID '{' error ';' {}
         | OBJECTID '(' error ')' ':' TYPEID '{' expr '}' ';' {}
         ;
