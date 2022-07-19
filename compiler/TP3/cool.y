@@ -328,7 +328,7 @@ expr : OBJECTID ASSIGN expr
          $$ = eq($1, $3); }
      | NOT expr                             
        { @$ = @1;
-         $$ = neg($2); }
+         $$ = comp($2); }
      | '(' expr ')'                         
        { @$ = @1;
          $$ = $2; }
