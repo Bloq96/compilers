@@ -159,8 +159,6 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 	de um expressão let a partir de uma expressão base, uma
 	estrutura Let_structure base e uma lista de estrturas
 	Let_structure.
-	- void yyerror(char *): Função para impressão dos erros
-	encontrados pelo parser.
 
 	Union com todas as ações que podem ser resultado do
 	parseamento: foram incluídos dois novos atributos a essa
@@ -206,7 +204,7 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 	não de inicialização. No caso dos métodos, cria-se um nó de
 	método com o Id dele, sua lista de parâmetros, seu tipo de
 	retorno e seu corpo. No caso dos membros, cria-se um nó de
-	atributo com o seu Id, tipo e prossível expressão de valor.
+	atributo com o seu Id, tipo e possível expressão de valor.
 	Erros podem surgir no que deveria ser a expressão do corpo
 	do método ou no que deveria ser a lista de parâmetros dele.
 	- Uma formal_list pode derivar uma formal_list seguido de
@@ -251,12 +249,80 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 	base do case.
 	
 - Decisões de projeto
+	Durante a escrita do parser muitas decisões de projeto foram tomadas,
+	contudo serão explicadas aqui as decisões mais importantes.
 
+	Primeiramente observou-se que a gramática da linguagem causava uma 
+	ambiguidade na produção do let. Assim para resolução adicionou-se o
+	terminal LETPREC com a menor precedência entre todos os terminais 
+	da linguagem. Então na regra de produção do let o comando %prec foi
+	utilizado com a mesma precedência de LETPREC. Isso faz com que qualquer 
+	outro token que possa ser futuramente reduzido é preferido na resolução
+	do conflito. Portanto o let se estende a definição mais à esquerda.
+
+	Outro conflito observado é na chamada de métodos. 
+	- expr: OBJECTID
+	- expr: OBJECTID (
+	
+	Ambas produções acima  
+	podem ser usadas quando o proximo token é '('. Porém nesse caso a dupla 
+	entendeu que a precedência deve ser da chamada de métodos. Assim criou-se
+	mais um terminal fictício chamado CALLPREC que possui precedência maior
+	apenas que o LETPREC. Assim na foi adicionada na primeira produção a 
+	precedência desse terminal para que seja preferida a chamada de métodos
+	nessa situação.
+
+	Outra decisão tomada foi em relação a construção do let com múltiplas
+	definições. Entendeu-se que as definições precisam ser realizadas em lets 
+	aninhados. Para isso criou-se a estrutura Let_structure e a lista ListLet.
+	A função dessa estrutura de dados é criar uma lista de declarações let.
+	Essa lista de declarações é usada na função letConstruct() para criar o 
+	"aninhamento" das declarações.
+
+	Outra modificação importante foi realizada para atualizar o numero da linha
+	de definição de cada elemento da AST. Com uma busca na internet constatou-se
+	que através das definições abaixo a linha de leitura de cada token fosse 
+	corretamente atualizado na variável @n.
+	``` C++
+	#define YYLTYPE int 
+	extern char *curr_filename;
+	#define cool_yylloc curr_lineno
+
+	#define YYLLOC_DEFAULT(Current, Rhs, N)         \
+	Current = Rhs[1];                             \
+	node_lineno = Current;
+
+
+	#define SET_NODELOC(Current)  \
+	node_lineno = Current;
+	```
+	Contudo, para que essa definição não causasse erro de compilação foi necessário
+	alterar a linha 29 do arquivo *parser-phase.cc*. Portanto a linha que define a 
+	variável *curr_lineno* foi comentada pois ela passa então a ser declarada 
+	diretamente no parser.
+
+- Casos de erro previstos
+	Os casos de erros previstos e o tratamento adotado pelo parser
+	são:
+	- Classe mal definida: dever-se-ia continuar a análise a
+	partir da próxima class;
+	- feature com erro: devem estar terminadas com ';' e, em caso,
+	de erro, deve-se seguir para a próxima feature;
+	- Erro na variável do let: pula-se para a próxima variável.
+	- Case match errado: continua o parsing a partir do próximo
+	case;
+	- Expressão case errada: continua no primeiro case match após
+	o token OF.
+	- Erro em métodos: verifica-se se há erros nos parâmetros e,
+	se houver, pula-se para a análise do corpo do método para
+	averiguar se há erro nele também.
+	- Erro na última variável do let: também verifica-se o corpo
+	do let se houver erro na última variável dele.
 
 - Testes realizados
 
 	good.cl: Todos os casos básicos de derivação são testados
-	neste arquivo. As derivaçõs de program e class_list são
+	neste arquivo. As derivações de program e class_list são
 	testadas pelas classes Main, A e BB__. class é testado
 	tanto nos casos com e sem herança e dummy_features_list é
 	testado pela lista de elementos de cada uma dessas classes.
@@ -267,7 +333,7 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 
 	formal e formal_list são testados com os argumentos das
 	funções setValue, add e sub. Por sua vez, dummy_expr_list
-	é testado com a chamda dessas funções no corpo da main.
+	é testado com a chamada dessas funções no corpo da main.
 	expr_list também é testada nesse contexto pelo agrupamento
 	de mais de uma expr no corpo da main.
 
@@ -293,17 +359,8 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 	uma letra maiúscula), erro na escrita de palavras reservadas,
 	descasamento do abre-fecha chaves.
 	
-	Além desses casos base foram testados também os erros:
-	- Classe mal configurada: dever-se-ia continuar a análise a
-	partir da próxima class;
-	- feature com erro: devem estar terminadas com ';' e, em caso,
-	de erro, deve-se seguir para a próxima feature;
-	- Erro na variável do let: pula-se para a próxima variável.
-	- Case match errado: continua o parsing a partir do próximo
-	case;
-	- Erro em métodos: verifica-se se há erros nos parâmetros e,
-	se houver, pula-se para a análise do corpo do método para
-	averiguar se há erro nele também.
-	- Erro na última variável do let: também verifica-se o corpo
-	do let se houver erro na última variável dele.
+
+
+	
+	
 	
