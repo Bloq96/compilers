@@ -204,8 +204,8 @@ expr_list : expr  ';'
           ;
 
 dummy_expr_list : /* empty */  { $$ = nil_Expressions(); }
-                | dummy_expr_list ',' expr  
-                  { $$ = append_Expressions($1, single_Expressions($3));}
+                | dummy_expr_list expr ','
+                  { $$ = append_Expressions($1, single_Expressions($2));}
                 ;
 let_declare : OBJECTID ':' TYPEID   
               { Let_structure letD;
@@ -252,23 +252,23 @@ expr : OBJECTID ASSIGN expr
      | expr '.' OBJECTID '(' ')'            
        { @$ = @1; 
          $$ = dispatch($1, $3, nil_Expressions()); }  
-     | expr '.' OBJECTID '(' expr dummy_expr_list ')'
+     | expr '.' OBJECTID '(' dummy_expr_list expr ')'
        { @$ = @1;  
-         $$ = dispatch($1, $3, append_Expressions($6, single_Expressions($5)));}
+         $$ = dispatch($1, $3, append_Expressions($5, single_Expressions($6)));}
      | expr '@' TYPEID '.' OBJECTID '(' ')' 
        { SET_NODELOC(@5); 
          $$ = static_dispatch($1, $3, $5, nil_Expressions()); }
-     | expr '@' TYPEID '.' OBJECTID '(' expr dummy_expr_list ')'
+     | expr '@' TYPEID '.' OBJECTID '(' dummy_expr_list expr ')'
        { SET_NODELOC(@5);  
-         $$ = static_dispatch($1, $3, $5, append_Expressions($8, single_Expressions($7))); }
+         $$ = static_dispatch($1, $3, $5, append_Expressions($7, single_Expressions($8))); }
      | OBJECTID '(' ')'                     
        { @$ = @1;
          $$ = dispatch(object(idtable.add_string((char *)"self")), 
                        $1, nil_Expressions()); }
-     | OBJECTID '(' expr dummy_expr_list ')' 
+     | OBJECTID '(' dummy_expr_list expr ')' 
        { @$ = @1;
          $$ = dispatch(object(idtable.add_string((char *)"self")), 
-                      $1, append_Expressions($4,single_Expressions($3))); }
+                      $1, append_Expressions($3,single_Expressions($4))); }
      | IF expr THEN expr ELSE expr FI       
        { @$ = @1; 
          $$ = cond($2, $4, $6); }
