@@ -202,7 +202,7 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 	derivação é uma lista com os nós de feature.
 	- Uma feature resulta em uma expressão de feature, que pode
 	ser um método sem argumentos, com um ou mais argumentos (
-	formal formal_list) ou uma declaração de atributo seguida ou
+	formal_list formal) ou uma declaração de atributo seguida ou
 	não de inicialização. No caso dos métodos, cria-se um nó de
 	método com o Id dele, sua lista de parâmetros, seu tipo de
 	retorno e seu corpo. No caso dos membros, cria-se um nó de
@@ -210,9 +210,9 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 	Erros podem surgir no que deveria ser a expressão do corpo
 	do método ou no que deveria ser a lista de parâmetros dele.
 	- Uma formal_list pode derivar uma formal_list seguido de
-	um parâmetro (formal) separados por vírgula ou nada (lista
-	de parâmetros vazia). Produz-se, então, uma lista com os nós
-	de formal.
+	um parâmetro (formal) seguido, por sua vez, de vírgula ou
+	derivar nada (lista de parâmetros vazia). Produz-se, então,
+	uma lista com os nós de formal.
 	- Um formal deriva uma expressão de parâmetro formal, da qual
 	se criará um nó de parâmetro a partir do Id e do tipo
 	presentes na expressão.
@@ -221,9 +221,8 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 	em ';'. O resultado da derivação é uma lista de nós de
 	expressão. Outras derivações resultam em erro.
 	- Uma dummy_expr_list pode derivar nada (lista vazia) ou
-	uma dummy_expr_list seguida de expr separadas por uma
-	vírgula. O resultado dessa derivação também é uma lista
-	de nós do tipo expressão.
+	uma dummy_expr_list seguida de expr e uma vírgula. O resultado
+	dessa derivação também é uma lista de nós do tipo expressão.
 	- Um let_declare gera uma expressão de declaração de variável
 	que pode conter ou não uma inicialização. Dessa derivação,
 	gera-se um Let_structure com os parâmetros correspondentes:
@@ -256,9 +255,38 @@ Dupla: Gabriel Ricardo Thomaz de Araújo - 2017002334
 
 - Testes realizados
 
-	good.cl: 
+	good.cl: Todos os casos básicos de derivação são testados
+	neste arquivo. As derivaçõs de program e class_list são
+	testadas pelas classes Main, A e BB__. class é testado
+	tanto nos casos com e sem herança e dummy_features_list é
+	testado pela lista de elementos de cada uma dessas classes.
+	Cada tipo de elemento (feature) possível é testado, como
+	métodos com (setValue, add, sub) e sem (getValue, zero, one)
+	argumentos e os atributos com (b, console) e sem (value)
+	inicialização.
 
+	formal e formal_list são testados com os argumentos das
+	funções setValue, add e sub. Por sua vez, dummy_expr_list
+	é testado com a chamda dessas funções no corpo da main.
+	expr_list também é testada nesse contexto pelo agrupamento
+	de mais de uma expr no corpo da main.
 
+	case_match, case_match_list, let_declare, let_list e suas
+	respectivas expressões de LET e CASE são testados dentro
+	desse corpo da main, sendo que, no caso, do let_declare ambos
+	os casos com e sem inicialização são testados.
+
+	Além desses dois casos de expr, todos os outros casos de expr
+	também podem ser verificados no bloco principal da main, como
+	é o caso de expressões de atribuição, chamada de função e de
+	método (com e sem argumento e de natureza estática ou não),
+	além de expressões IF, WHILE, NEW, ISVOID, bem como todas as
+	expressões dos tipos lógica e aritmética, literais básicos e
+	nomes de variáveis.
+
+	Disso, conclui-se que todas as derivações corretas possíveis
+	foram testadas pelo menos uma vez para situações básicas neste
+	arquivo.
 
 	bad.cl: Foram testados os erros nos casos base: nome de tipo
 	incorreto (deve ter caracteres alfa-numéricos iniciados com
